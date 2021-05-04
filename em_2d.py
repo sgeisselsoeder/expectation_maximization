@@ -36,7 +36,8 @@ class GMM:
         """ 1. Set the initial mu, covariance and pi values"""
         self.mu = np.random.randint(min(self.X[:, 0]), max(self.X[:, 0]), size=(self.number_of_sources, len(
             self.X[0])))  # This is a nxm matrix since we assume n sources (n Gaussians) where each has m dimensions
-        # We need a nxmxm covariance matrix for each source since we have m features --> We create symmetric covariance matrices with ones on the digonal
+        # We need a nxmxm covariance matrix for each source since we have m features -->
+        # --> We create symmetric covariance matrices with ones on the digonal
         self.cov = np.zeros((self.number_of_sources, len(X[0]), len(X[0])))
         for dim in range(len(self.cov)):
             np.fill_diagonal(self.cov[dim], 5)
@@ -81,7 +82,8 @@ class GMM:
             This gives us then a list with 100 entries.
             What we have now is FOR EACH LOOP a list with 100 entries in the nominator and a list with 100 entries in the denominator
             where each element is the pdf per class c for each instance x_i (nominator) respectively the summed pdf's of classes c for each
-            instance x_i. Consequently we can now divide the nominator by the denominator and have as result a list with 100 elements which we
+            instance x_i. Consequently we can now divide the nominator by the denominator and
+            have as result a list with 100 elements which we
             can then assign to r_ic[:,r] --> One row r per source c. In the end after we have done this for all three sources (three loops)
             and run from r==0 to r==2 we get a matrix with dimensionallity 100x3 which is exactly what we want.
             If we check the entries of r_ic we see that there mostly one element which is much larger than the other two. This is because
@@ -91,7 +93,8 @@ class GMM:
             """
 
             """M Step"""
-            # Calculate the new mean vector and new covariance matrices, based on the probable membership of the single x_i to classes c --> r_ic
+            # Calculate the new mean vector and new covariance matrices,
+            # based on the probable membership of the single x_i to classes c --> r_ic
             self.mu = []
             self.cov = []
             self.pi = []
