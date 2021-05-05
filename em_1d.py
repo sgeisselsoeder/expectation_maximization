@@ -22,23 +22,36 @@ X_tot = np.stack(X_is).flatten()  # Combine the clusters to get the random datap
 # X_tot = np.stack((X0, X1, X2)).flatten()  # Combine the clusters to get the random datapoints from above
 
 
-def plot_data_and_gaussians(r, mu, var, X, iter):
+def plot_data_and_gaussians(p, mu, var, X, iter):
+    number_gaussians = len(mu)
+    number_examples = len(p)
+    plotting_grid = np.linspace(-20, 20, num=60)
+
     """Plot the data"""
     fig = plt.figure(figsize=(10, 10))
     ax0 = fig.add_subplot(111)
 
-    for i in range(len(r)):
-        rgb_color = np.array([r[i][0], r[i][1], r[i][2]])
-        # normalize the vector
+    for i in range(number_examples):
+        # determine the color of every datapoint corresponding to the probability it was created by the first up-to-three gaussians
+        rgb_color = np.zeros(shape=(number_gaussians))
+        for j in range(number_gaussians):
+            rgb_color[j] = p[i][j]
+
+        # normalize the vector to always be a valid color
         rgb_color = rgb_color / np.linalg.norm(rgb_color, ord=1)
-        print(r[i, :])
+
+        # plot every datapoint according to its p(x | mu, sigma)
         ax0.scatter(X[i], 0, color=rgb_color, s=100)
 
+    gaussian_pdfs = []
+    for i in range(number_gaussians):
+        gaussian = norm(loc=mu[i], scale=var[i])
+        gaussian_pdf = gaussian.pdf(plotting_grid)
+        gaussian_pdfs.append(gaussian_pdf)
+
     """Plot the gaussians"""
-    for g, c in zip([norm(loc=mu[0], scale=var[0]).pdf(np.linspace(-20, 20, num=60)),
-                     norm(loc=mu[1], scale=var[1]).pdf(np.linspace(-20, 20, num=60)),
-                     norm(loc=mu[2], scale=var[2]).pdf(np.linspace(-20, 20, num=60))], ['r', 'g', 'b']):
-        ax0.plot(np.linspace(-20, 20, num=60), g, c=c)
+    for gaussian_pdf, c in zip(gaussian_pdfs, ['r', 'g', 'b']):
+        ax0.plot(plotting_grid, gaussian_pdf, c=c)
     plt.savefig("new_" + str(iter) + ".png")
 
 
@@ -50,7 +63,7 @@ def e_step(mu, var, pi, X):
     number_examples = len(X)
 
     """Create the array r with dimensionality n x K"""
-    r = np.zeros((number_examples, number_gaussians))
+    p = np.zeros((number_examples, number_gaussians))
 
     """
     Probability for each datapoint x_i to belong to gaussian g
@@ -60,25 +73,25 @@ def e_step(mu, var, pi, X):
         gaussians.append(norm(loc=mu[i], scale=var[i]))
 
     for i, gaussian, this_pi in zip(range(number_gaussians), gaussians, pi):
-        r[:, i] = this_pi * gaussian.pdf(X)  # Write the probability that x belongs to gaussian i in column i.
+        p[:, i] = this_pi * gaussian.pdf(X)  # Write the probability that x belongs to gaussian i in column i.
         # Therewith we get a 60x3 array filled with the probability that each x_i belongs to one of the gaussians
     """
     Normalize the probabilities such that each row of r sums to 1 and weight it by mu_c == the fraction of points belonging to
     cluster c
     """
-    for i in range(len(r)):
-        r[i] = r[i] / (np.sum(pi) * np.sum(r, axis=1)[i])
+    for i in range(len(p)):
+        p[i] = p[i] / (np.sum(pi) * np.sum(p, axis=1)[i])
 
-    return r
+    return p
 
 
-def m_step(r, pi, mu, X):
+def m_step(p, pi, mu, X):
     """M-Step"""
 
     """calculate m_c"""
     m_c = []
-    for c in range(len(r[0])):
-        m = np.sum(r[:, c])
+    for c in range(len(p[0])):
+        m = np.sum(p[:, c])
         m_c.append(m)  # For each cluster c, calculate the m_c and add it to the list m_c
 
     """calculate pi_c"""
@@ -87,22 +100,21 @@ def m_step(r, pi, mu, X):
         pi[k] = (m_c[k]/np.sum(m_c))
 
     """calculate mu_c"""
-    mu = np.sum(X.reshape(len(X), 1)*r, axis=0)/m_c
+    mu = np.sum(X.reshape(len(X), 1) * p, axis=0) / m_c
 
-    # var_c.append((1/m_c[c]) * np.dot(((np.array(r[:, c]).reshape(60, 1)) *
+    # var_c.append((1/m_c[c]) * np.dot(((np.array(p[:, c]).reshape(60, 1)) *
     #                                 (X.reshape(len(X), 1)-mu[c])).T,
     #                                (X.reshape(len(X), 1)-mu[c])))
 
     """calculate var_c"""
     var_c = []
-    for c in range(len(r[0])):
-        this_r = np.array(r[:, c])
-        # print(this_r.shape)
-        this_r = this_r.reshape(this_r.shape[0], 1)
+    for c in range(len(p[0])):
+        this_p = np.array(p[:, c])
+        this_p = this_p.reshape(this_p.shape[0], 1)
 
         x = X.reshape(len(X), 1)
         diff = x - mu[c]
-        result = (1 / m_c[c]) * np.dot((this_r * diff).T, diff)
+        result = (1 / m_c[c]) * np.dot((this_p * diff).T, diff)
         var_c.append(result)
 
         # var_c.append((1 / m_c[c]) * np.dot((this_r * diff).T, diff))
@@ -117,9 +129,9 @@ def em(X_tot, iterations: int = 10):
 
     for iter in range(iterations):
         print(var)
-        r = e_step(mu=mu, var=var, pi=pi, X=X_tot)
-        plot_data_and_gaussians(r=r, mu=mu, var=var, X=X_tot, iter=iter)
-        pi, mu, _ = m_step(r=r, pi=pi, mu=mu, X=X_tot)
+        p = e_step(mu=mu, var=var, pi=pi, X=X_tot)
+        plot_data_and_gaussians(p=p, mu=mu, var=var, X=X_tot, iter=iter)
+        pi, mu, _ = m_step(p=p, pi=pi, mu=mu, X=X_tot)
 
 
 em(X_tot=X_tot, iterations=10)
