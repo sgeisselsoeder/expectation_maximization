@@ -1,23 +1,25 @@
 from scipy.stats import norm
 import numpy as np
-import pandas as pd
-import sklearn as sk
-
-
-# from https://www.python-course.eu/expectation_maximization_and_gaussian_mixture_models.php
-# also see https://towardsdatascience.com/implement-expectation-maximization-em-algorithm-in-python-from-scratch-f1278d1b9137
-
-
 import matplotlib.pyplot as plt
 from matplotlib import style
 style.use('fivethirtyeight')
 np.random.seed(0)
 
+# from https://www.python-course.eu/expectation_maximization_and_gaussian_mixture_models.php
+# also see https://towardsdatascience.com/implement-expectation-maximization-em-algorithm-in-python-from-scratch-f1278d1b9137
+
 X = np.linspace(-5, 5, num=20)
-X0 = X*np.random.rand(len(X))+15  # Create data cluster 1
-X1 = X*np.random.rand(len(X))-15  # Create data cluster 2
-X2 = X*np.random.rand(len(X))  # Create data cluster 3
-X_tot = np.stack((X0, X1, X2)).flatten()  # Combine the clusters to get the random datapoints from above
+
+number_gaussians_to_generate = 3
+X_is = []
+for i in range(number_gaussians_to_generate):
+    X_i = X * np.random.rand(len(X)) + (i - 1) * 15
+    X_is.append(X_i)
+X_tot = np.stack(X_is).flatten()  # Combine the clusters to get the random datapoints from above
+# X0 = X*np.random.rand(len(X))+15  # Create data cluster 1
+# X1 = X*np.random.rand(len(X))-15  # Create data cluster 2
+# X2 = X*np.random.rand(len(X))  # Create data cluster 3
+# X_tot = np.stack((X0, X1, X2)).flatten()  # Combine the clusters to get the random datapoints from above
 
 
 def plot_data_and_gaussians(r, mu, var, X, iter):
@@ -26,7 +28,11 @@ def plot_data_and_gaussians(r, mu, var, X, iter):
     ax0 = fig.add_subplot(111)
 
     for i in range(len(r)):
-        ax0.scatter(X[i], 0, color=np.array([r[i][0], r[i][1], r[i][2]]), s=100)
+        rgb_color = np.array([r[i][0], r[i][1], r[i][2]])
+        # normalize the vector
+        rgb_color = rgb_color / np.linalg.norm(rgb_color, ord=1)
+        print(r[i, :])
+        ax0.scatter(X[i], 0, color=rgb_color, s=100)
 
     """Plot the gaussians"""
     for g, c in zip([norm(loc=mu[0], scale=var[0]).pdf(np.linspace(-20, 20, num=60)),
@@ -36,17 +42,25 @@ def plot_data_and_gaussians(r, mu, var, X, iter):
     plt.savefig("new_" + str(iter) + ".png")
 
 
-def e_step(mu, var, pi, X_tot):
-    """Create the array r with dimensionality nxK"""
-    r = np.zeros((len(X_tot), 3))
+# y(z) = pi N(x, mu, Sigma) / sum(N(x, mu, Sigma))
+# y = f(pi, x, mu, Sigma)
+# y = f(mu, var, pi, x)
+def e_step(mu, var, pi, X):
+    number_gaussians = len(mu)
+    number_examples = len(X)
+
+    """Create the array r with dimensionality n x K"""
+    r = np.zeros((number_examples, number_gaussians))
 
     """
     Probability for each datapoint x_i to belong to gaussian g
     """
-    for c, g, p in zip(range(3), [norm(loc=mu[0], scale=var[0]),
-                                  norm(loc=mu[1], scale=var[1]),
-                                  norm(loc=mu[2], scale=var[2])], pi):
-        r[:, c] = p * g.pdf(X_tot)  # Write the probability that x belongs to gaussian c in column c.
+    gaussians = []
+    for i in range(number_gaussians):
+        gaussians.append(norm(loc=mu[i], scale=var[i]))
+
+    for i, gaussian, this_pi in zip(range(number_gaussians), gaussians, pi):
+        r[:, i] = this_pi * gaussian.pdf(X)  # Write the probability that x belongs to gaussian i in column i.
         # Therewith we get a 60x3 array filled with the probability that each x_i belongs to one of the gaussians
     """
     Normalize the probabilities such that each row of r sums to 1 and weight it by mu_c == the fraction of points belonging to
@@ -102,7 +116,8 @@ def em(X_tot, iterations: int = 10):
     var = [5, 3, 1]
 
     for iter in range(iterations):
-        r = e_step(mu=mu, var=var, pi=pi, X_tot=X_tot)
+        print(var)
+        r = e_step(mu=mu, var=var, pi=pi, X=X_tot)
         plot_data_and_gaussians(r=r, mu=mu, var=var, X=X_tot, iter=iter)
         pi, mu, _ = m_step(r=r, pi=pi, mu=mu, X=X_tot)
 
@@ -130,7 +145,7 @@ class GM1D:
         E-Step
         """
         for iter in range(self.iterations):
-            print(self.var)
+            # print(self.var)
 
             """Create the array r with dimensionality nxK"""
             r = np.zeros((len(X_tot), 3))
@@ -187,13 +202,13 @@ class GM1D:
                                                 (self.X.reshape(len(self.X), 1)-self.mu[c])).T,
                                                (self.X.reshape(len(self.X), 1)-self.mu[c])))
 
-            print(var_c)
-            for i in range(len(self.var)):
-                self.var[i] = var_c[i][0][0]
+            # print(var_c)
+            # for i in range(len(self.var)):
+            #     self.var[i] = var_c[i][0][0]
 
             # plt.show()
             plt.savefig("orginal_" + str(iter) + ".png")
 
 
 GM1D = GM1D(X_tot, 10)
-GM1D.run()
+# GM1D.run()
