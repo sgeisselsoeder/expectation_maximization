@@ -13,7 +13,7 @@ X = np.linspace(-5, 5, num=20)
 number_gaussians_to_generate = 3
 X_is = []
 for i in range(number_gaussians_to_generate):
-    X_i = X * np.random.rand() + (i - 1) * 15
+    X_i = X * np.random.rand(len(X)) + (i - 1) * 15
     X_is.append(X_i)
 X_tot = np.stack(X_is).flatten()  # Combine the clusters to get the random datapoints from above
 # X0 = X*np.random.rand(len(X))+15  # Create data cluster 1
@@ -136,6 +136,8 @@ def m_step(p, pi, mu, X):
         ps_this_gaussian = ps_this_gaussian.reshape(ps_this_gaussian.shape[0], 1)
 
         distances_points_to_cluster = x - mu[i]
+        # distances_points_to_cluster = distances_points_to_cluster / np.max(np.abs(distances_points_to_cluster))
+
         scaling = (1.0 / total_p_of_gaussians[i])
         # result = scaling * np.dot((this_p * distances_points_to_cluster).T, distances_points_to_cluster)
         sigma_contributions = 0.0
@@ -143,7 +145,9 @@ def m_step(p, pi, mu, X):
             p_this_gauss_this_example = ps_this_gaussian[j]
             distance_this_example_this_mean = distances_points_to_cluster[j]
             sigma_contributions += p_this_gauss_this_example * distance_this_example_this_mean * distance_this_example_this_mean
-        sigma_this_cluster = scaling * sigma_contributions
+
+        sigma_contributions = sigma_contributions
+        sigma_this_cluster = np.sqrt(scaling * sigma_contributions)
         result = sigma_this_cluster
         var_c.append(result)
 
@@ -164,7 +168,7 @@ def em(X_tot, iterations: int = 10):
         pi, mu, var = m_step(p=p, pi=pi, mu=mu, X=X_tot)
 
 
-em(X_tot=X_tot, iterations=10)
+em(X_tot=X_tot, iterations=20)
 
 
 class GM1D:
