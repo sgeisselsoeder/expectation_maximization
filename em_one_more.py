@@ -45,9 +45,6 @@ def plot_result(pis, mus, sigmas, filename):
     plt.savefig(filename)
 
 
-plot_result(pis=pis, mus=mus, sigmas=sigmas, filename="another_setup.png")
-
-
 def em_gmm_orig(xs, pis, mus, sigmas, tol=0.001, max_iter=100):
     n, p = xs.shape
     k = len(pis)
@@ -137,13 +134,10 @@ def em_gmm_vect(xs, pis, mus, sigmas, tol=0.001, max_iter=100):
             break
         ll_old = ll_new
 
-        plot_result(pis=pis, mus=mus, sigmas=sigmas, filename="another_vec_" + str(iter) + ".png")
+        plot_result(pis=pis, mus=mus, sigmas=sigmas, filename="em2d_" + str(iter + 1) + ".png")
 
     return pis, mus, sigmas
 
 
-pis1, mus1, sigmas1 = em_gmm_orig(xs, pis, mus, sigmas)
-plot_result(pis=pis1, mus=mus1, sigmas=sigmas1, filename="one_more_org.png")
-
+plot_result(pis=pis, mus=mus, sigmas=sigmas, filename="em2d_0.png")
 pis2, mus2, sigmas2 = em_gmm_vect(xs, pis, mus, sigmas)
-plot_result(pis=pis2, mus=mus2, sigmas=sigmas2, filename="one_more_vec.png")
