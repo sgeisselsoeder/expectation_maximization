@@ -35,7 +35,12 @@ def plot_setup(X):
     for i in range(number_examples):
         ax0.scatter(X[i], 0.0, color=rgb_color, s=100)
 
+    ax0.set_xlabel("x")
+    ax0.set_yticks([])
+    ax0.set_yticks([], minor=True)
+
     plt.savefig("em1d_0.png")
+    plt.close()
 
 
 def plot_data_and_gaussians(p, mu, var, X, iter):
@@ -72,6 +77,10 @@ def plot_data_and_gaussians(p, mu, var, X, iter):
         if i < len(colors):
             color = colors[i]
         ax0.plot(plotting_grid, gaussian_pdf, c=color)
+
+    ax0.set_xlabel("x")
+    ax0.set_yticks([])
+    ax0.set_yticks([], minor=True)
 
     plt.savefig("em1d_" + str(iter + 1) + ".png")
     plt.close()
@@ -164,4 +173,4 @@ def em(X, iterations: int = 10):
         pi, mu, var = m_step(p=p, pi=pi, mu=mu, X=X)
 
 
-em(X=X, iterations=20)
+em(X=X, iterations=14)

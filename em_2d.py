@@ -19,6 +19,10 @@ pis /= pis.sum()
 mus = np.random.random((2, 2))
 sigmas = np.array([np.eye(2)] * 2)
 
+# mus = np.array([[-4, 4], [2, 2]])
+# sigmas = np.array([[[1, 0], [0, 0.5]], [[0, 1], [0, 1]]])
+# pis = np.array([0.5, 0.5])
+
 
 def plot_result(pis, mus, sigmas, filename):
     intervals = 101
@@ -41,6 +45,8 @@ def plot_result(pis, mus, sigmas, filename):
     # plt.axis([-8, 6, -6, 8])
     ax.axes.set_aspect('equal')
     plt.tight_layout()
+    ax.set_xlabel("x1")
+    ax.set_ylabel("x2")
 
     plt.savefig(filename)
 
