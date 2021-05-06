@@ -2,7 +2,6 @@ from scipy.stats import multivariate_normal as mvn
 import numpy as np
 import matplotlib.pyplot as plt
 from numpy import matmul as mm
-import matplotlib.pyplot as plt
 import numpy as np
 plt.style.use('ggplot')
 np.random.seed(1234)
@@ -21,12 +20,40 @@ mus = np.random.random((2, 2))
 sigmas = np.array([np.eye(2)] * 2)
 
 
-def em_gmm_orig(xs, pis, mus, sigmas, tol=0.01, max_iter=100):
+def plot_result(pis, mus, sigmas, filename):
+    intervals = 101
+    ys = np.linspace(-8, 8, intervals)
+    X, Y = np.meshgrid(ys, ys)
+    _ys = np.vstack([X.ravel(), Y.ravel()]).T
+
+    z = np.zeros(len(_ys))
+    for pi, mu, sigma in zip(pis, mus, sigmas):
+        z += pi*mvn(mu, sigma).pdf(_ys)
+    z = z.reshape((intervals, intervals))
+
+    # ax = plt.subplot(111)
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    # ax = plt.subplot()
+    plt.scatter(xs[:, 0], xs[:, 1], alpha=0.2)
+    plt.contour(X, Y, z)
+    # plt.contour(X, Y, z, N=10)
+    # plt.axis([-8, 6, -6, 8])
+    ax.axes.set_aspect('equal')
+    plt.tight_layout()
+
+    plt.savefig(filename)
+
+
+plot_result(pis=pis, mus=mus, sigmas=sigmas, filename="another_setup.png")
+
+
+def em_gmm_orig(xs, pis, mus, sigmas, tol=0.001, max_iter=100):
     n, p = xs.shape
     k = len(pis)
 
     ll_old = 0
-    for i in range(max_iter):
+    for iter in range(max_iter):
         ll_new = 0
 
         # E-step
@@ -68,15 +95,17 @@ def em_gmm_orig(xs, pis, mus, sigmas, tol=0.01, max_iter=100):
             break
         ll_old = ll_new
 
+        plot_result(pis=pis, mus=mus, sigmas=sigmas, filename="another_" + str(iter) + ".png")
+
     return pis, mus, sigmas
 
 
-def em_gmm_vect(xs, pis, mus, sigmas, tol=0.01, max_iter=100):
+def em_gmm_vect(xs, pis, mus, sigmas, tol=0.001, max_iter=100):
     n, p = xs.shape
     k = len(pis)
 
     ll_old = 0
-    for i in range(max_iter):
+    for iter in range(max_iter):
         ll_new = 0
 
         # E-step
@@ -108,30 +137,9 @@ def em_gmm_vect(xs, pis, mus, sigmas, tol=0.01, max_iter=100):
             break
         ll_old = ll_new
 
+        plot_result(pis=pis, mus=mus, sigmas=sigmas, filename="another_vec_" + str(iter) + ".png")
+
     return pis, mus, sigmas
-
-
-def plot_result(pis, mus, sigmas, filename):
-    intervals = 101
-    ys = np.linspace(-8, 8, intervals)
-    X, Y = np.meshgrid(ys, ys)
-    _ys = np.vstack([X.ravel(), Y.ravel()]).T
-
-    z = np.zeros(len(_ys))
-    for pi, mu, sigma in zip(pis, mus, sigmas):
-        z += pi*mvn(mu, sigma).pdf(_ys)
-    z = z.reshape((intervals, intervals))
-
-    # ax = plt.subplot(111)
-    ax = plt.subplot()
-    plt.scatter(xs[:, 0], xs[:, 1], alpha=0.2)
-    plt.contour(X, Y, z)
-    # plt.contour(X, Y, z, N=10)
-    # plt.axis([-8, 6, -6, 8])
-    ax.axes.set_aspect('equal')
-    plt.tight_layout()
-
-    plt.savefig(filename)
 
 
 pis1, mus1, sigmas1 = em_gmm_orig(xs, pis, mus, sigmas)
