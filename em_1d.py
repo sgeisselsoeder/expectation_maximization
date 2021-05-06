@@ -82,7 +82,7 @@ def e_step(mu, var, pi, X):
     """
     gaussians = []
     for i in range(number_gaussians):
-        gaussians.append(norm(loc=mu[i], scale=var[i]))
+        gaussians.append(norm(loc=mu[i], scale=np.sqrt(var[i])))
 
     for i, gaussian, this_pi in zip(range(number_gaussians), gaussians, pi):
         p[:, i] = this_pi * gaussian.pdf(X)  # Write the probability that x belongs to gaussian i in column i.
@@ -121,10 +121,6 @@ def m_step(p, pi, mu, X):
     """calculate new means mu for each cluster """
     mu = np.sum(x * p, axis=0) / total_p_of_gaussians
 
-    # var_c.append((1/m_c[c]) * np.dot(((np.array(p[:, c]).reshape(60, 1)) *
-    #                                 (X.reshape(len(X), 1)-mu[c])).T,
-    #                                (X.reshape(len(X), 1)-mu[c])))
-
     """calculate var_c"""
     var_c = []
     for i in range(number_gaussians):
@@ -132,7 +128,6 @@ def m_step(p, pi, mu, X):
         ps_this_gaussian = ps_this_gaussian.reshape(ps_this_gaussian.shape[0], 1)
 
         distances_points_to_cluster = x - mu[i]
-        # distances_points_to_cluster = distances_points_to_cluster / np.max(np.abs(distances_points_to_cluster))
 
         scaling = (1.0 / total_p_of_gaussians[i])
         # result = scaling * np.dot((this_p * distances_points_to_cluster).T, distances_points_to_cluster)
@@ -143,7 +138,7 @@ def m_step(p, pi, mu, X):
             sigma_contributions += p_this_gauss_this_example * distance_this_example_this_mean * distance_this_example_this_mean
 
         sigma_contributions = sigma_contributions
-        sigma_this_cluster = np.sqrt(scaling * sigma_contributions)
+        sigma_this_cluster = scaling * sigma_contributions
         result = sigma_this_cluster
         var_c.append(result)
 
@@ -155,9 +150,9 @@ def em(X_tot, iterations: int = 10):
     pi = [1/3, 1/3, 1/3]
     var = [5, 3, 1]
 
-    mu = [-8, 8]
-    pi = [1/3, 1/3]
-    var = [5, 3]
+    # mu = [-8, 8]
+    # pi = [1/3, 1/3]
+    # var = [5, 3]
 
     for iter in range(iterations):
         print("Iteration ", iter, " of ", iterations)
