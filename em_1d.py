@@ -8,50 +8,73 @@ np.random.seed(0)
 # from https://www.python-course.eu/expectation_maximization_and_gaussian_mixture_models.php
 # also see https://towardsdatascience.com/implement-expectation-maximization-em-algorithm-in-python-from-scratch-f1278d1b9137
 
-X = np.linspace(-5, 5, num=20)
+datenpunkte_pro_cluster = 20
+clusterbereich = np.linspace(-5, 5, num=datenpunkte_pro_cluster)
 
-number_gaussians_to_generate = 3
-X_is = []
-for i in range(number_gaussians_to_generate):
-    X_i = X * np.random.rand(len(X)) + (i - 1) * 15
-    X_is.append(X_i)
-X_tot = np.stack(X_is).flatten()  # Combine the clusters to get the random datapoints from above
+number_clusters_to_generate = 3
+clusters = []
+for i in range(number_clusters_to_generate):
+    # Datenpunkte, jeweils auf der x-Achse verschoben
+    cluster = clusterbereich * np.random.rand(datenpunkte_pro_cluster) + (i - 1) * 18
+    clusters.append(cluster)
+# Die Beispieldaten X bestehen aus der Summe aler Cluster
+X = np.stack(clusters).flatten()
+
+
+def plot_setup(X):
+    number_examples = len(X)
+
+    # Eine Figure zum darstellen der Daten erstellen
+    fig = plt.figure(figsize=(10, 10))
+    ax0 = fig.add_subplot(111)
+    ax0.set_xlim([-33, 33])
+    ax0.set_ylim([-0.02, 0.4])
+
+    # Die Datenpunkte plotten
+    rgb_color = np.array([0.0, 0.0, 1.0])
+    for i in range(number_examples):
+        ax0.scatter(X[i], 0.0, color=rgb_color, s=100)
+
+    plt.savefig("em1d_0.png")
 
 
 def plot_data_and_gaussians(p, mu, var, X, iter):
     number_gaussians = len(mu)
     number_examples = len(p)
-    plotting_grid = np.linspace(-20, 20, num=60)
 
-    """Plot the data"""
+    # Eine Figure zum darstellen der Daten erstellen
     fig = plt.figure(figsize=(10, 10))
     ax0 = fig.add_subplot(111)
+    ax0.set_ylim([-0.02, 0.4])
 
+    # Die Datenpunkte plotten
+    rgb_color = np.zeros(shape=(3))
     for i in range(number_examples):
-        # determine the color of every datapoint corresponding to the probability it was created by the first up-to-three gaussians
-        rgb_color = np.zeros(shape=(3))
-        for j in range(number_gaussians):
+        # Die Farbe der Datenpunkte entspricht der Verteilung der Wahrscheinlichkeiten p(x | mu, sigma)
+        # (wie wahrscheinlich welcher Gauss den Datenpunkt erzeugt und nur für die ersten drei).
+        for j in range(min(number_gaussians, 3)):
             rgb_color[j] = p[i][j]
 
-        # normalize the vector to always be a valid color
+        # Normieren der Farben ist notwendig für die Darstellung
         rgb_color = rgb_color / np.linalg.norm(rgb_color, ord=1)
 
-        # plot every datapoint according to its p(x | mu, sigma)
+        # Plotten der Datenpunkte
         ax0.scatter(X[i], 0.0, color=rgb_color, s=100)
 
-    gaussian_pdfs = []
+    # Ploten der Gaussverteilungen
+    plotting_grid = np.linspace(-30, 30, num=300)
+    colors = ['r', 'g', 'b', 'm']
+    color = colors[0]
     for i in range(number_gaussians):
         gaussian = norm(loc=mu[i], scale=var[i])
-        gaussian_pdf = gaussian.pdf(plotting_grid)
-        gaussian_pdfs.append(gaussian_pdf)
+        gaussian_pdf = gaussian.pdf(plotting_grid).flatten()
 
-    """Plot the gaussians"""
-    for gaussian_pdf, c in zip(gaussian_pdfs, ['r', 'g', 'b']):
-        # print(plotting_grid.shape)
-        gaussian_pdf = gaussian_pdf.flatten()
-        # print(gaussian_pdf.shape)
-        ax0.plot(plotting_grid, gaussian_pdf, c=c)
-    plt.savefig("new_" + str(iter) + ".png")
+        if i < len(colors):
+            color = colors[i]
+        ax0.plot(plotting_grid, gaussian_pdf, c=color)
+
+    plt.savefig("em1d_" + str(iter + 1) + ".png")
+    plt.close()
 
 
 # y(z) = pi N(x, mu, Sigma) / sum(N(x, mu, Sigma))
@@ -73,24 +96,17 @@ def e_step(mu, var, pi, X):
 
     number_gaussians = len(mu)
     number_examples = len(X)
-
-    """Create the array r with dimensionality n x K"""
     p = np.zeros((number_examples, number_gaussians))
 
-    """
-    Probability for each datapoint x_i to belong to gaussian g
-    """
+    # Probability for each datapoint x_i to belong to gaussian g
     gaussians = []
     for i in range(number_gaussians):
         gaussians.append(norm(loc=mu[i], scale=np.sqrt(var[i])))
 
     for i, gaussian, this_pi in zip(range(number_gaussians), gaussians, pi):
         p[:, i] = this_pi * gaussian.pdf(X)  # Write the probability that x belongs to gaussian i in column i.
-        # Therewith we get a 60x3 array filled with the probability that each x_i belongs to one of the gaussians
-    """
-    Normalize the probabilities such that each row of r sums to 1 and weight it by mu_c == the fraction of points belonging to
-    cluster c
-    """
+
+    # Normalize the probabilities such that each row of r sums to 1 and weight it by mu_c == the fraction of points belonging to cluster c
     for i in range(len(p)):
         p[i] = p[i] / (np.sum(pi) * np.sum(p, axis=1)[i])
 
@@ -106,59 +122,46 @@ def m_step(p, pi, mu, X):
 
     total_p = np.sum(p)
 
-    """calculate m_c"""
+    """calculate "contribution weights" of gaussians"""
     total_p_of_gaussians = []
     for c in range(number_gaussians):
         p_this_gaussian_for_all_data = np.sum(p[:, c])
-        # For each cluster, calculate the m_c and add it to the list m_c
         total_p_of_gaussians.append(p_this_gaussian_for_all_data)
 
-    """calculate pi_c"""
+    """update the fraction of contributions (pi) from each cluster"""
     for i in range(number_gaussians):
-        # For each cluster c, calculate the fraction of points pi_c which belongs to cluster c
         pi[i] = (total_p_of_gaussians[i] / total_p)
 
-    """calculate new means mu for each cluster """
+    """update means mu for each cluster """
     mu = np.sum(x * p, axis=0) / total_p_of_gaussians
 
-    """calculate var_c"""
+    """update variances var"""
     var_c = []
     for i in range(number_gaussians):
         ps_this_gaussian = np.array(p[:, i])
         ps_this_gaussian = ps_this_gaussian.reshape(ps_this_gaussian.shape[0], 1)
 
-        distances_points_to_cluster = x - mu[i]
+        distances_examples_to_cluster = x - mu[i]
+        distances_squared = distances_examples_to_cluster * distances_examples_to_cluster
 
-        scaling = (1.0 / total_p_of_gaussians[i])
-        # result = scaling * np.dot((this_p * distances_points_to_cluster).T, distances_points_to_cluster)
-        sigma_contributions = 0.0
-        for j in range(number_examples):
-            p_this_gauss_this_example = ps_this_gaussian[j]
-            distance_this_example_this_mean = distances_points_to_cluster[j]
-            sigma_contributions += p_this_gauss_this_example * distance_this_example_this_mean * distance_this_example_this_mean
+        sigma_this_cluster = (1.0 / total_p_of_gaussians[i]) * np.sum(ps_this_gaussian * distances_squared)
 
-        sigma_contributions = sigma_contributions
-        sigma_this_cluster = scaling * sigma_contributions
-        result = sigma_this_cluster
-        var_c.append(result)
+        var_c.append(sigma_this_cluster)
 
     return pi, mu, var_c
 
 
-def em(X_tot, iterations: int = 10):
+def em(X, iterations: int = 10):
     mu = [-8, 8, 5]
     pi = [1/3, 1/3, 1/3]
     var = [5, 3, 1]
 
-    # mu = [-8, 8]
-    # pi = [1/3, 1/3]
-    # var = [5, 3]
-
+    plot_setup(X=X)
     for iter in range(iterations):
         print("Iteration ", iter, " of ", iterations)
-        p = e_step(mu=mu, var=var, pi=pi, X=X_tot)
-        plot_data_and_gaussians(p=p, mu=mu, var=var, X=X_tot, iter=iter)
-        pi, mu, var = m_step(p=p, pi=pi, mu=mu, X=X_tot)
+        p = e_step(mu=mu, var=var, pi=pi, X=X)
+        plot_data_and_gaussians(p=p, mu=mu, var=var, X=X, iter=iter)
+        pi, mu, var = m_step(p=p, pi=pi, mu=mu, X=X)
 
 
-em(X_tot=X_tot, iterations=20)
+em(X=X, iterations=20)
