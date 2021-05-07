@@ -1,8 +1,6 @@
 from scipy.stats import multivariate_normal as mvn
 import numpy as np
 import matplotlib.pyplot as plt
-from numpy import matmul as mm
-import numpy as np
 plt.style.use('ggplot')
 np.random.seed(1234)
 
@@ -127,7 +125,7 @@ def em_gmm_vect(xs, pis, mus, sigmas, tol=0.001, max_iter=100):
         sigmas = np.zeros((k, p, p))
         for j in range(k):
             ys = xs - mus[j, :]
-            sigmas[j] = (ws[j, :, None, None] * mm(ys[:, :, None], ys[:, None, :])).sum(axis=0)
+            sigmas[j] = (ws[j, :, None, None] * np.matmul(ys[:, :, None], ys[:, None, :])).sum(axis=0)
         sigmas /= ws.sum(axis=1)[:, None, None]
 
         # update complete log likelihood
