@@ -2,7 +2,6 @@
 from sklearn.mixture import GaussianMixture
 from scipy.stats import multivariate_normal
 import numpy as np
-# from sklearn.datasets.samples_generator import make_blobs
 from sklearn.datasets import make_blobs
 import matplotlib.pyplot as plt
 from matplotlib import style

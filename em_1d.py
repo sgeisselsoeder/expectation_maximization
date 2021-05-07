@@ -142,7 +142,7 @@ def m_step(p, pi, mu, X):
         pi[i] = (total_p_of_gaussians[i] / total_p)
 
     """update means mu for each cluster """
-    mu = np.sum(x * p, axis=0) / total_p_of_gaussians
+    mu = np.sum(p * x, axis=0) / total_p_of_gaussians
 
     """update variances var"""
     var_c = []
