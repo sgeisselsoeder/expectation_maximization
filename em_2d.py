@@ -17,14 +17,10 @@ pis /= pis.sum()
 mus = np.random.random((2, 2))
 sigmas = np.array([np.eye(2)] * 2)
 
-# mus = np.array([[-4, 4], [2, 2]])
-# sigmas = np.array([[[1, 0], [0, 0.5]], [[0, 1], [0, 1]]])
-# pis = np.array([0.5, 0.5])
-
 
 def plot_result(pis, mus, sigmas, filename):
     intervals = 101
-    ys = np.linspace(-8, 8, intervals)
+    ys = np.linspace(-7, 7, intervals)
     X, Y = np.meshgrid(ys, ys)
     _ys = np.vstack([X.ravel(), Y.ravel()]).T
 
@@ -33,18 +29,19 @@ def plot_result(pis, mus, sigmas, filename):
         z += pi*mvn(mu, sigma).pdf(_ys)
     z = z.reshape((intervals, intervals))
 
-    # ax = plt.subplot(111)
-    fig = plt.figure()
+    fig = plt.figure(figsize=(10, 10), dpi=80)
     ax = fig.add_subplot(111)
-    # ax = plt.subplot()
-    plt.scatter(xs[:, 0], xs[:, 1], alpha=0.2)
-    plt.contour(X, Y, z)
+    plt.scatter(xs[:, 0], xs[:, 1], alpha=0.2, linewidths=2.0)
+    plt.contour(X, Y, z, linewidths=3.0)
     # plt.contour(X, Y, z, N=10)
     # plt.axis([-8, 6, -6, 8])
     ax.axes.set_aspect('equal')
-    plt.tight_layout()
+    # plt.tight_layout()
     ax.set_xlabel("x1")
     ax.set_ylabel("x2")
+    ax.xaxis.label.set_size(25)
+    ax.yaxis.label.set_size(25)
+    ax.tick_params(axis='both', which='both', labelsize=15)
 
     plt.savefig(filename)
 
