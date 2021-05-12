@@ -38,6 +38,8 @@ def plot_setup(X):
     ax0.set_xlabel("x")
     ax0.set_yticks([])
     ax0.set_yticks([], minor=True)
+    ax0.xaxis.label.set_size(30)
+    ax0.tick_params(axis='both', which='both', labelsize=20)
 
     plt.savefig("em1d_0.png")
     plt.close()
@@ -76,11 +78,13 @@ def plot_data_and_gaussians(p, mu, var, X, iter):
 
         if i < len(colors):
             color = colors[i]
-        ax0.plot(plotting_grid, gaussian_pdf, c=color)
+        ax0.plot(plotting_grid, gaussian_pdf, c=color, linewidth=3.0)
 
     ax0.set_xlabel("x")
     ax0.set_yticks([])
     ax0.set_yticks([], minor=True)
+    ax0.xaxis.label.set_size(30)
+    ax0.tick_params(axis='both', which='both', labelsize=20)
 
     plt.savefig("em1d_" + str(iter + 1) + ".png")
     plt.close()
