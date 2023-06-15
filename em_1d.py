@@ -60,7 +60,7 @@ def plot_data_and_gaussians(p, mu, var, X, iter):
         # Die Farbe der Datenpunkte entspricht der Verteilung der Wahrscheinlichkeiten p(x | mu, sigma)
         # (wie wahrscheinlich welcher Gauss den Datenpunkt erzeugt und nur für die ersten drei).
         for j in range(min(number_gaussians, 3)):
-            rgb_color[j] = p[i][j]
+            rgb_color[j] = min(p[i][j], 1.0)
 
         # Normieren der Farben ist notwendig für die Darstellung
         rgb_color = rgb_color / np.linalg.norm(rgb_color, ord=1)
